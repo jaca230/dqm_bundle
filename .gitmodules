@@ -1,0 +1,21 @@
+[submodule "frontend"]
+	path = components/frontend
+	url = git@github.com:jaca230/DQM_webpage.git
+[submodule "gateway"]
+	path = components/gateway
+	url = git@github.com:jaca230/DQM_webserver_gateway.git
+[submodule "publisher"]
+	path = components/publisher
+	url = git@github.com:PIONEER-Experiment/zmq_publisher.git
+[submodule "midas_receiver"]
+	path = components/midas_receiver
+	url = git@github.com:jaca230/midas_receiver.git
+[submodule "pioneer_main"]
+	path = components/pioneer_main
+	url = git@github.com:PIONEER-Experiment/main.git
+[submodule "pioneer_shared"]
+	path = components/pioneer_shared
+	url = git@github.com:PIONEER-Experiment/shared.git
+[submodule "reco_testbeam"]
+	path = components/reco_testbeam
+	url = git@github.com:PIONEER-Experiment/reco_testbeam.git
