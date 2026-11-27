@@ -15,6 +15,10 @@ GATEWAY_PORT=8000
 MIDAS_PORT=8080
 RATE_HZ=100
 PAYLOAD_BYTES=16384
+BANK_MODE=builder
+SAMPIC_MODE=periodic_readout
+HDSOC_WINDOWS=8
+DUMMY_CUT_EVERY=0
 HOSTLIST=false
 PIDS=()
 NAMES=()
@@ -31,6 +35,10 @@ Options:
   --payload-bytes BYTES  Requested simulator payload size (default: 16384)
   --gateway-port PORT    Gateway HTTP port (default: 8000)
   --midas-port PORT      MIDAS/mhttpd port (default: 8080)
+  --bank-mode MODE      builder (default) or frontend
+  --sampic-mode MODE    periodic_readout (default) or time_grouping
+  --hdsoc-windows N     Windows per HDSoC waveform, 1..61 (default: 8)
+  --dummy-cut-every N   Enable dummy selection; 0 disables it (default)
   --with-hostlist        Keep MIDAS host access control enabled
   -h, --help             Display this help message
 EOF
@@ -49,6 +57,10 @@ while [[ $# -gt 0 ]]; do
         --payload-bytes) require_value "$@"; PAYLOAD_BYTES=$2; shift 2 ;;
         --gateway-port) require_value "$@"; GATEWAY_PORT=$2; shift 2 ;;
         --midas-port) require_value "$@"; MIDAS_PORT=$2; shift 2 ;;
+        --bank-mode) require_value "$@"; BANK_MODE=$2; shift 2 ;;
+        --sampic-mode) require_value "$@"; SAMPIC_MODE=$2; shift 2 ;;
+        --hdsoc-windows) require_value "$@"; HDSOC_WINDOWS=$2; shift 2 ;;
+        --dummy-cut-every) require_value "$@"; DUMMY_CUT_EVERY=$2; shift 2 ;;
         --with-hostlist) HOSTLIST=true; shift ;;
         -h|--help) show_help; exit 0 ;;
         *) echo "[run, ERROR] Unknown option: $1" >&2; show_help; exit 2 ;;
@@ -143,7 +155,9 @@ trap cleanup INT TERM EXIT
 DEMO_EXPTAB="$PUBLISHER/.artifacts/midas-demo/experiment/exptab"
 start_process simulators \
     python3 "$PUBLISHER/benchmarks/rate_tests/run_midas_demo.py" \
-    --midas-root "$MIDASSYS" --rate-hz "$RATE_HZ" --payload-bytes "$PAYLOAD_BYTES"
+    --midas-root "$MIDASSYS" --rate-hz "$RATE_HZ" --payload-bytes "$PAYLOAD_BYTES" \
+    --bank-mode "$BANK_MODE" --sampic-mode "$SAMPIC_MODE" \
+    --hdsoc-windows "$HDSOC_WINDOWS" --dummy-cut-every "$DUMMY_CUT_EVERY"
 
 MIDAS_READY=false
 for _ in $(seq 1 150); do

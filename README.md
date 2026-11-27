@@ -20,10 +20,41 @@ only the PIONEER top-level build files, `shared`, and `reco_testbeam`, then
 constructs a minimal ignored source layout used inside the existing Gaudi
 Apptainer image.
 
+## Builder-aware online pipeline
+
+The simulator and Gaudi pipeline support current SAMPIC `BD/BC/BS/BT` and
+HDSoC `HB/HC/HS` builder banks, plus compact standalone frontend banks. Crate and
+board identifiers reach the existing gateway/webapp schemas. Every event is
+processed; the demo publishes plot snapshots once per second, independent of
+input rate.
+
+For development on component branches, including uncommitted changes:
+
+```sh
+./scripts/build.sh --working-tree --jobs 4
+./scripts/run.sh --rate-hz 100 --hdsoc-windows 61
+```
+
+`--working-tree` preserves the component checkouts and copies the current
+`reco_testbeam` working files into the container build layout. Normal setup
+rejects uncommitted detector code rather than silently archiving stale HEAD.
+The ordinary build still uses committed, pinned sources.
+
+Simulator options: `--bank-mode builder|frontend`,
+`--sampic-mode periodic_readout|time_grouping`, `--hdsoc-windows 1..61`, and
+`--dummy-cut-every N` (`0` disables selection; `1` removes all SAMPIC/HDSoC data
+while preserving builder envelopes). These fixtures synthesize final banks;
+they do not run the actual hardware UDP/collector/builder chain.
+
+If host MIDAS exports incompatible host ROOT/Conda flags, set
+`PIONEER_GAUDI_MIDAS_SOURCE` in `.env` to a complete MIDAS source checkout. The
+sidecar scripts build and use a separate MIDAS installation under ignored
+publisher artifacts; the host simulators continue using `MIDASSYS`.
+
 ## Prerequisites
 
 - Linux or WSL with CMake, a C++ compiler, Git, Python 3, curl, Node.js/npm,
-  ZeroMQ/cppzmq, and Apptainer;
+  ZeroMQ/cppzmq, UUID development headers (`uuid-dev`), and Apptainer;
 - an installed MIDAS tree containing `bin`, `include`, and `lib`;
 - the PIONEER Gaudi Apptainer image.
 

@@ -7,6 +7,7 @@
 [submodule "publisher"]
 	path = components/publisher
 	url = git@github.com:PIONEER-Experiment/zmq_publisher.git
+	branch = debug/online-gaudi-pipeline-tests
 [submodule "midas_receiver"]
 	path = components/midas_receiver
 	url = git@github.com:jaca230/midas_receiver.git
@@ -19,3 +20,4 @@
 [submodule "reco_testbeam"]
 	path = components/reco_testbeam
 	url = git@github.com:PIONEER-Experiment/reco_testbeam.git
+	branch = feature/online-gaudi-pipeline

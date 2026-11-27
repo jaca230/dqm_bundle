@@ -7,6 +7,7 @@ BUNDLE_ROOT=$(realpath "$SCRIPT_DIR/..")
 JOBS=$(nproc)
 CLEAN=false
 SKIP_SIDECAR=false
+WORKING_TREE=false
 
 show_help() {
     cat <<EOF
@@ -17,6 +18,7 @@ Build every component required by the simulated DQM demo.
 Options:
   --clean             Reconfigure clean C++ build directories
   --jobs COUNT        Parallel build jobs (default: detected CPU count)
+  --working-tree      Build current component branches and uncommitted reco_testbeam changes
   --skip-sidecar      Reuse an existing Gaudi sidecar build
   -h, --help          Display this help message
 EOF
@@ -33,6 +35,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --clean) CLEAN=true; shift ;;
         --jobs) require_value "$@"; JOBS=$2; shift 2 ;;
+        --working-tree) WORKING_TREE=true; shift ;;
         --skip-sidecar) SKIP_SIDECAR=true; shift ;;
         -h|--help) show_help; exit 0 ;;
         *) echo "[build, ERROR] Unknown option: $1" >&2; show_help; exit 2 ;;
@@ -43,7 +46,11 @@ if [[ ! "$JOBS" =~ ^[1-9][0-9]*$ ]]; then
     exit 2
 fi
 
-"$SCRIPT_DIR/setup.sh"
+if [[ "$WORKING_TREE" == true ]]; then
+    "$SCRIPT_DIR/setup.sh" --working-tree
+else
+    "$SCRIPT_DIR/setup.sh"
+fi
 
 PUBLISHER="$BUNDLE_ROOT/components/publisher"
 GATEWAY="$BUNDLE_ROOT/components/gateway"

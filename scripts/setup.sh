@@ -10,6 +10,7 @@ RUNTIME_DIR="$BUNDLE_ROOT/.runtime"
 PIONEER_SOURCE="$RUNTIME_DIR/pioneer"
 PUBLISHER_ENV="$BUNDLE_ROOT/components/publisher/scripts/environment/.env.local"
 SKIP_SUBMODULES=false
+WORKING_TREE=false
 
 show_help() {
     cat <<EOF
@@ -18,6 +19,7 @@ Usage: ./scripts/setup.sh [OPTIONS]
 Prepare the pinned DQM demo source tree and validate host prerequisites.
 
 Options:
+  --working-tree      Copy current reco_testbeam working files; preserve component branches
   --skip-submodules   Do not initialize/update the pinned submodules
   -h, --help          Display this help message
 EOF
@@ -25,6 +27,7 @@ EOF
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --working-tree) WORKING_TREE=true; SKIP_SUBMODULES=true; shift ;;
         --skip-submodules) SKIP_SUBMODULES=true; shift ;;
         -h|--help) show_help; exit 0 ;;
         *) echo "[setup, ERROR] Unknown option: $1" >&2; show_help; exit 2 ;;
@@ -61,6 +64,16 @@ for required_path in \
     fi
 done
 
+if [[ "$WORKING_TREE" == false ]]; then
+    for component in publisher reco_testbeam; do
+        directory="$BUNDLE_ROOT/components/$component"
+        if [[ -e "$directory/.git" ]] && [[ -n "$(git -C "$directory" status --porcelain)" ]]; then
+            echo "[setup, ERROR] $component has uncommitted changes. Use --working-tree to build them." >&2
+            exit 1
+        fi
+    done
+fi
+
 if [[ "$SKIP_SUBMODULES" == false ]]; then
     git -C "$BUNDLE_ROOT" submodule sync
     # Deliberately omit --recursive. pioneer_main contains the complete
@@ -95,8 +108,24 @@ git -C "$BUNDLE_ROOT/components/pioneer_main" archive HEAD CMakeLists.txt cmake 
     | tar -x -C "$PIONEER_SOURCE"
 ln -s "$BUNDLE_ROOT/components/pioneer_shared" "$PIONEER_SOURCE/shared"
 mkdir -p "$PIONEER_SOURCE/reco_testbeam"
-git -C "$BUNDLE_ROOT/components/reco_testbeam" archive HEAD \
-    | tar -x -C "$PIONEER_SOURCE/reco_testbeam"
+if [[ "$WORKING_TREE" == true ]]; then
+    python3 - "$BUNDLE_ROOT/components/reco_testbeam" "$PIONEER_SOURCE/reco_testbeam" <<'PY_COPY'
+import os, shutil, subprocess, sys
+from pathlib import Path
+source, destination = map(Path, sys.argv[1:])
+files = subprocess.check_output(['git', '-C', str(source), 'ls-files', '-z', '--cached', '--others', '--exclude-standard'])
+for entry in set(files.split(b'\0')) - {b''}:
+    relative = os.fsdecode(entry)
+    original, target = source / relative, destination / relative
+    if original.is_file() or original.is_symlink():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(original, target, follow_symlinks=False)
+print('[setup] Copied reco_testbeam working tree (including uncommitted changes).')
+PY_COPY
+else
+    git -C "$BUNDLE_ROOT/components/reco_testbeam" archive HEAD \
+        | tar -x -C "$PIONEER_SOURCE/reco_testbeam"
+fi
 # PIONEER's top-level BUILD_REC flag both enables Gaudi discovery and requests
 # add_subdirectory(Reco). The online module needs the former but not the full
 # reconstruction project, so satisfy the structural check with an empty,
@@ -110,6 +139,9 @@ mkdir -p "$(dirname "$PUBLISHER_ENV")"
     printf 'export MIDAS_RECEIVER_SOURCE=%q\n' "$BUNDLE_ROOT/components/midas_receiver"
     printf 'export PIONEER_SOURCE_DIR=%q\n' "$PIONEER_SOURCE"
     printf 'export PIONEER_GAUDI_IMAGE=%q\n' "$(realpath "$PIONEER_GAUDI_IMAGE")"
+    if [[ -n "${PIONEER_GAUDI_MIDAS_SOURCE:-}" ]]; then
+        printf 'export PIONEER_GAUDI_MIDAS_SOURCE=%q\n' "$(realpath "$PIONEER_GAUDI_MIDAS_SOURCE")"
+    fi
 } > "$PUBLISHER_ENV"
 
 echo "[setup] Environment validated."
