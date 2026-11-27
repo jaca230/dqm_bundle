@@ -239,6 +239,7 @@ fi
 
 echo
 echo "DQM demo is running:"
+echo "  Publisher control: http://127.0.0.1:8090"
 echo "  Dashboard:       http://127.0.0.1:$MIDAS_PORT/DQM"
 echo "  MIDAS:           http://127.0.0.1:$MIDAS_PORT"
 echo "  Gateway catalog: http://127.0.0.1:$GATEWAY_PORT/api/v1/catalog"

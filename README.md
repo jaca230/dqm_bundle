@@ -147,3 +147,25 @@ debugging, its four underlying commands remain the component-native ones
 documented in each submodule: `run_midas_demo.py`, publisher `scripts/run.sh`,
 gateway `scripts/run.sh`, and frontend `scripts/midas/launch.sh`.
 
+
+### Full channel-view fixture
+
+After building the current working trees, exercise all 512 SAMPIC and 64 HDSoC
+channel identities with:
+
+```sh
+ZMQ_RATE_TEST_SAMPIC_FULL_OCCUPANCY=1 ZMQ_RATE_TEST_WFD5_SAMPLES=256 \
+  ./scripts/run.sh --rate-hz 100 --payload-bytes 96256 --hdsoc-windows 8
+```
+
+Open the SAMPIC/HDSoC channel browser buttons in the dashboard toolbar. The
+SAMPIC flag selects a flat synthetic 512-channel monitoring geometry; it is
+not a calibrated detector geometry. Without the flag the existing geometry
+fixture remains unchanged.
+
+The simulated workflow also starts the publisher's separate operator panel at
+**http://127.0.0.1:8090/**. It controls publication cadence, manual histogram resets,
+and automatic reset on a new run (enabled by default). The MIDAS DQM page remains
+a viewer. STOP preserves a final snapshot; the next START resets monitoring state
+unless the operator disables that policy. See the publisher Gaudi extension README
+for configuration and supported runtime controls.
